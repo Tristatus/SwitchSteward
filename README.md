@@ -9,8 +9,7 @@ guarded by a timed rollback and recorded in an audit trail.
 
 It is built for small and medium networks (tens to a few hundred devices) that need
 controlled, auditable changes without a full network management system. SwitchSteward
-runs on Python 3.10+ with FastAPI and SQLite: no frontend build, no external database,
-no agent on the devices. The interface is available in German and English, in a light
+runs on Python 3.10+ with FastAPI and SQLite. The interface is available in German and English, in a light
 and a dark theme.
 
 ## Features
