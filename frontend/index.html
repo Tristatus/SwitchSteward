@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwitchSteward</title>
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+<script src="/static/theme.js?v=__APP_VERSION__"></script>
+<link rel="stylesheet" href="/static/app.css?v=__APP_VERSION__">
+<link rel="stylesheet" href="/static/wlan.css?v=__APP_VERSION__">
+</head>
+<body>
+
+<div id="login-screen" class="modal-backdrop hidden">
+  <form id="login-form" class="modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <div class="login-theme">
+      <button id="login-theme-toggle" class="theme-toggle" type="button" data-theme-toggle role="switch" aria-label="Light Mode" aria-checked="false" title="Zum Light Mode wechseln">Dark Mode</button>
+      <button id="login-language-toggle" class="theme-toggle" type="button" data-language-toggle aria-label="Sprache wechseln" title="Sprache wechseln">EN</button>
+    </div>
+    <h2 id="login-title" data-i18n="Anmelden">Anmelden</h2>
+    <div id="login-form-controls">
+      <div id="login-provider-field" class="field hidden"><label for="login-provider" data-i18n="Anmeldeweg">Anmeldeweg</label>
+        <select id="login-provider">
+          <option value="local" data-i18n="Lokales Konto">Lokales Konto</option>
+          <option value="ad" data-i18n="Active Directory">Active Directory</option>
+        </select>
+      </div>
+      <div class="field"><label for="login-username" data-i18n="Benutzername">Benutzername</label><input id="login-username" autocomplete="username"></div>
+      <div class="field"><label for="login-password" data-i18n="Passwort">Passwort</label><input id="login-password" type="password" autocomplete="current-password"></div>
+    </div>
+    <div id="login-error" role="alert" style="color: var(--danger); font-size: 12px; margin-bottom: 10px;"></div>
+    <button class="primary" id="login-submit" type="submit" style="width:100%" data-i18n="Anmelden">Anmelden</button>
+    <button id="login-entra" type="button" class="hidden" style="width:100%; margin-top: 8px;" data-i18n="Mit Microsoft Entra ID anmelden">Mit Microsoft Entra ID anmelden</button>
+    <button id="login-retry" type="button" class="hidden" style="width:100%" data-i18n="Erneut versuchen">Erneut versuchen</button>
+  </form>
+</div>
+
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div class="brand">SwitchSteward <small id="app-version" style="color: var(--text-dim); font-size: 11px;" aria-label="Installierte Version" data-i18n-aria-label="Installierte Version">Version …</small></div>
+    <form id="global-search-form" class="topbar-search" role="search">
+      <input
+        id="global-search-input"
+        type="search"
+        minlength="2"
+        maxlength="100"
+        placeholder="Gerätename oder MAC-Adresse suchen …" data-i18n-placeholder="Gerätename oder MAC-Adresse suchen …"
+        aria-label="Gerätename oder MAC-Adresse auf allen Switches suchen" data-i18n-aria-label="Gerätename oder MAC-Adresse auf allen Switches suchen"
+      >
+      <button id="global-search-submit" type="submit" data-i18n="Suchen">Suchen</button>
+    </form>
+    <div class="topbar-right">
+      <button id="theme-toggle" class="theme-toggle" type="button" data-theme-toggle role="switch" aria-label="Light Mode" aria-checked="false" title="Zum Light Mode wechseln">Dark Mode</button>
+      <button id="language-toggle" class="theme-toggle" type="button" data-language-toggle aria-label="Sprache wechseln" title="Sprache wechseln">EN</button>
+      <span id="me-username"></span>
+      <span id="me-role-badge" class="role-badge hidden" data-i18n="Nur-Lesezugriff">Nur-Lesezugriff</span>
+      <button id="btn-logout" data-i18n="Abmelden">Abmelden</button>
+    </div>
+  </div>
+  <nav class="workspace-nav" aria-label="Anwendungsbereich" data-i18n-aria-label="Anwendungsbereich">
+    <button id="nav-switches" class="workspace-nav-btn active" type="button" aria-current="page">Switches</button>
+    <button id="nav-wlan" class="workspace-nav-btn" type="button">WLAN</button>
+    <button id="nav-admin" class="workspace-nav-btn hidden" type="button" data-i18n="Administration">Administration</button>
+  </nav>
+  <div class="layout">
+    <div class="sidebar" id="switch-sidebar">
+      <div class="flex-row" style="justify-content: space-between; margin-bottom: 8px;">
+        <h3 style="margin:0">Switches</h3>
+        <button id="btn-add-group" title="Neue Gruppe erstellen" data-i18n-title="Neue Gruppe erstellen" data-i18n="+ Gruppe">+ Gruppe</button>
+      </div>
+      <input id="switch-search" class="switch-search" type="search" placeholder="Switch suchen …" data-i18n-placeholder="Switch suchen …" aria-label="Switch suchen" data-i18n-aria-label="Switch suchen">
+      <div id="switch-list"></div>
+      <button style="width:100%; margin-top:10px" id="btn-add-switch" data-i18n="+ Switch hinzufügen">+ Switch hinzufügen</button>
+      <button style="width:100%; margin-top:6px" id="btn-vtp-domains" type="button" data-i18n="VTP-Domänen">VTP-Domänen</button>
+    </div>
+    <div class="sidebar hidden" id="wlan-sidebar">
+      <div class="flex-row" style="justify-content: space-between; margin-bottom: 8px;">
+        <h3 style="margin:0" data-i18n="WLAN-Controller">WLAN-Controller</h3>
+        <button id="btn-add-wlan-controller" type="button" data-i18n="+ Controller">+ Controller</button>
+      </div>
+      <input id="wlan-controller-search" class="switch-search" type="search" placeholder="Controller suchen …" data-i18n-placeholder="Controller suchen …" aria-label="WLAN-Controller suchen" data-i18n-aria-label="WLAN-Controller suchen">
+      <div id="wlan-controller-list"></div>
+    </div>
+    <div class="sidebar hidden" id="admin-sidebar">
+      <h3 style="margin: 0 0 8px;" data-i18n="Administration">Administration</h3>
+      <div id="admin-section-list">
+        <button id="admin-nav-auth" class="switch-item admin-nav-item" type="button" data-admin-section="auth" data-i18n="Authentifizierung">Authentifizierung</button>
+        <button id="admin-nav-users" class="switch-item admin-nav-item" type="button" data-admin-section="users" data-i18n="Benutzer">Benutzer</button>
+        <button id="admin-nav-mappings" class="switch-item admin-nav-item" type="button" data-admin-section="mappings" data-i18n="Gruppenzuordnung">Gruppenzuordnung</button>
+        <button id="admin-nav-credentials" class="switch-item admin-nav-item" type="button" data-admin-section="credentials" data-i18n="Globale Zugangsdaten">Globale Zugangsdaten</button>
+        <button id="admin-nav-operations" class="switch-item admin-nav-item" type="button" data-admin-section="operations" data-i18n="Betrieb">Betrieb</button>
+        <button id="admin-nav-port-profiles" class="switch-item admin-nav-item" type="button" data-admin-section="port-profiles" data-i18n="Port-Profile">Port-Profile</button>
+        <button id="admin-nav-audit" class="switch-item admin-nav-item" type="button" data-admin-section="audit" data-i18n="Audit-Log">Audit-Log</button>
+        <button id="admin-nav-system-log" class="switch-item admin-nav-item" type="button" data-admin-section="system-log" data-i18n="System-Log">System-Log</button>
+        <button id="admin-nav-software-update" class="switch-item admin-nav-item" type="button" data-admin-section="software-update" data-i18n="Software-Update">Software-Update</button>
+      </div>
+    </div>
+    <div class="main" id="main-content">
+      <div class="empty-state" data-i18n="Wähle links einen Switch aus, oder füge einen neuen hinzu.">Wähle links einen Switch aus, oder füge einen neuen hinzu.</div>
+    </div>
+    <div class="main hidden" id="admin-pages">
+      <section id="admin-page-credentials" class="admin-section hidden" aria-labelledby="admin-credentials-title">
+        <h2 id="admin-credentials-title" data-i18n="Globale Gerätezugangsdaten">Globale Gerätezugangsdaten</h2>
+        <div class="panel-box" style="max-width: 560px;">
+          <p class="admin-muted" data-i18n="Standard für Switches und WLAN-Controller mit der Auswahl „Globale Zugangsdaten verwenden“. Die Speicherung erfolgt verschlüsselt.">Standard für Switches und WLAN-Controller mit der Auswahl „Globale Zugangsdaten verwenden“. Die Speicherung erfolgt verschlüsselt.</p>
+          <div id="cred-status" class="admin-muted" role="status" style="margin-bottom: 10px;"></div>
+          <div class="field"><label for="cred-username" data-i18n="Benutzername">Benutzername</label><input id="cred-username" autocomplete="off"></div>
+          <div class="field" id="cred-password-field"><label for="cred-password" data-i18n="Passwort">Passwort</label><input id="cred-password" type="password" autocomplete="new-password"></div>
+          <div class="field" id="cred-enable-field"><label for="cred-enable" data-i18n="Enable-Secret (optional, nur für Switches)">Enable-Secret (optional, nur für Switches)</label><input id="cred-enable" type="password" autocomplete="new-password"></div>
+          <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+            <button class="primary" id="cred-save" data-i18n="Speichern">Speichern</button>
+          </div>
+        </div>
+      </section>
+      <section id="admin-page-software-update" class="admin-section hidden" aria-labelledby="software-update-title">
+        <h2 id="software-update-title" data-i18n="Software aktualisieren">Software aktualisieren</h2>
+        <div class="panel-box" style="max-width: 640px;">
+          <p><span data-i18n="Installierte Version:">Installierte Version:</span> <strong id="software-update-version">…</strong></p>
+          <p style="color: var(--text-dim);" data-i18n="Das heruntergeladene Release-Archiv auswählen. Nach der Prüfung können Sie die neue Version installieren.">Das heruntergeladene Release-Archiv auswählen. Nach der Prüfung können Sie die neue Version installieren.</p>
+          <div class="field"><label for="software-update-file" data-i18n="Release-Archiv (.zip, .tar.gz, .tgz)">Release-Archiv (.zip, .tar.gz, .tgz)</label><input id="software-update-file" type="file" accept=".zip,.tar.gz,.tgz"></div>
+          <button id="software-update-upload" data-i18n="Archiv hochladen und prüfen">Archiv hochladen und prüfen</button>
+          <div id="software-update-preview" class="hidden panel-box" style="margin-top: 16px;"></div>
+          <p id="software-update-status" role="status" aria-live="polite"></p>
+          <p id="software-update-error" role="alert" style="color: var(--danger);"></p>
+          <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+            <button id="software-update-install" class="primary hidden" data-i18n="Version installieren">Version installieren</button>
+            <button id="software-update-reload" class="primary hidden" data-i18n="Seite neu laden">Seite neu laden</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div id="wlan-device-modal" class="modal-backdrop hidden">
+  <div class="modal wlan-device-modal" role="dialog" aria-modal="true" aria-labelledby="wlan-device-modal-title" tabindex="-1">
+    <div class="wlan-controller-heading">
+      <h2 id="wlan-device-modal-title" data-i18n="Gerätekonfiguration">Gerätekonfiguration</h2>
+      <button id="wlan-device-close" type="button" aria-label="Dialog schließen" data-i18n-aria-label="Dialog schließen" data-modal-close data-i18n="Schließen">Schließen</button>
+    </div>
+    <div id="wlan-device-modal-body"></div>
+  </div>
+</div>
+
+<div id="wlan-controller-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 440px;" role="dialog" aria-modal="true" aria-labelledby="wlan-controller-modal-title">
+    <h2 id="wlan-controller-modal-title" data-i18n="WLAN-Controller hinzufügen">WLAN-Controller hinzufügen</h2>
+    <div class="field"><label for="wlan-controller-name" data-i18n="Name">Name</label><input id="wlan-controller-name" maxlength="100" autocomplete="off"></div>
+    <div class="field"><label for="wlan-controller-platform" data-i18n="Plattform">Plattform</label>
+      <select id="wlan-controller-platform">
+        <option value="catalyst_9800">Cisco Catalyst 9800</option>
+      </select>
+    </div>
+    <div class="field"><label for="wlan-controller-transport">Transport</label>
+      <select id="wlan-controller-transport">
+        <option value="restconf">RESTCONF (HTTPS)</option>
+        <option value="netconf">NETCONF (SSH/YANG)</option>
+      </select>
+      <div id="wlan-controller-transport-help" class="wlan-transport-help" data-i18n="RESTCONF nutzt HTTPS und standardmäßig Port 443.">RESTCONF nutzt HTTPS und standardmäßig Port 443.</div>
+    </div>
+    <div class="field"><label for="wlan-controller-host" data-i18n="Hostname oder IP-Adresse">Hostname oder IP-Adresse</label><input id="wlan-controller-host" maxlength="253" autocomplete="off"></div>
+    <div class="field"><label for="wlan-controller-port" data-i18n="Port">Port</label><input id="wlan-controller-port" type="number" min="1" max="65535" value="443"></div>
+    <div class="field"><label for="wlan-controller-site" data-i18n="Standort">Standort</label><input id="wlan-controller-site" maxlength="100" autocomplete="off"></div>
+    <div class="field"><label for="wlan-controller-notes" data-i18n="Notizen">Notizen</label><textarea id="wlan-controller-notes" maxlength="2000" rows="3"></textarea></div>
+    <p id="wlan-controller-credentials-help" class="wlan-modal-help"></p>
+    <button id="wlan-controller-edit-credentials" type="button" class="hidden" data-i18n="Zugangsdaten konfigurieren">Zugangsdaten konfigurieren</button>
+    <div id="wlan-controller-modal-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="wlan-controller-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="wlan-controller-save" type="button" data-i18n="Speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div id="wlan-credentials-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 420px;" role="dialog" aria-modal="true" aria-labelledby="wlan-credentials-modal-title">
+    <h2 id="wlan-credentials-modal-title" data-i18n="WLAN-Zugangsdaten">WLAN-Zugangsdaten</h2>
+    <p class="wlan-modal-help" data-i18n="Dieser Controller kann die globalen Zugangsdaten oder eigene, verschlüsselt gespeicherte Zugangsdaten verwenden.">Dieser Controller kann die globalen Zugangsdaten oder eigene, verschlüsselt gespeicherte Zugangsdaten verwenden.</p>
+    <div id="wlan-credentials-status" class="wlan-credentials-status"></div>
+    <div class="field"><label for="wlan-credentials-mode" data-i18n="Zugangsdaten verwenden">Zugangsdaten verwenden</label><select id="wlan-credentials-mode"><option value="global" data-i18n="Globale Zugangsdaten verwenden">Globale Zugangsdaten verwenden</option><option value="device" data-i18n="Eigene Zugangsdaten verwenden">Eigene Zugangsdaten verwenden</option></select></div>
+    <p id="wlan-credentials-global-status" class="wlan-modal-help"></p>
+    <div id="wlan-credentials-device-fields">
+    <div class="field"><label id="wlan-credentials-username-label" for="wlan-credentials-username" data-i18n="RESTCONF-Benutzername">RESTCONF-Benutzername</label><input id="wlan-credentials-username" maxlength="255" autocomplete="off"></div>
+    <div class="field"><label for="wlan-credentials-password" data-i18n="Passwort">Passwort</label><input id="wlan-credentials-password" type="password" autocomplete="new-password"></div>
+    <p class="wlan-modal-help" id="wlan-credentials-password-help" data-i18n="Bei bestehenden Zugangsdaten kann das Passwort leer bleiben.">Bei bestehenden Zugangsdaten kann das Passwort leer bleiben.</p>
+    </div>
+    <div id="wlan-credentials-modal-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="wlan-credentials-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="wlan-credentials-save" type="button" data-i18n="Speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div id="switch-modal" class="modal-backdrop hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="switch-modal-title">
+    <h2 id="switch-modal-title" data-i18n="Switch hinzufügen">Switch hinzufügen</h2>
+    <div class="field"><label for="sw-name" data-i18n="Name">Name</label><input id="sw-name"></div>
+    <div class="field"><label for="sw-ip" data-i18n="IP-Adresse">IP-Adresse</label><input id="sw-ip"></div>
+    <div class="field"><label for="sw-vendor" data-i18n="Hersteller">Hersteller</label><select id="sw-vendor"></select></div>
+    <div class="field"><label for="sw-device-type" data-i18n="Plattform / Betriebssystem">Plattform / Betriebssystem</label><select id="sw-device-type"></select></div>
+    <div class="field"><label for="sw-model" data-i18n="Modell">Modell</label><select id="sw-model"></select></div>
+    <div class="field"><label for="sw-site" data-i18n="Standort">Standort</label><input id="sw-site"></div>
+    <div class="field"><label for="sw-group" data-i18n="Gruppe">Gruppe</label><select id="sw-group"></select></div>
+    <div class="field"><label for="sw-port" data-i18n="Port">Port</label><input id="sw-port" type="number" min="1" max="65535" step="1" value="22"></div>
+    <div class="field"><label for="sw-notes" data-i18n="Notizen">Notizen</label><input id="sw-notes"></div>
+    <p id="sw-credentials-help" style="font-size:12px; color: var(--text-dim)"></p>
+    <button id="sw-edit-credentials" type="button" class="hidden" data-i18n="Zugangsdaten konfigurieren">Zugangsdaten konfigurieren</button>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="sw-cancel" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="sw-save" data-i18n="Speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div id="group-modal" class="modal-backdrop hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="group-modal-title">
+    <h2 id="group-modal-title" data-i18n="Gruppe erstellen">Gruppe erstellen</h2>
+    <div class="field"><label for="group-name" data-i18n="Name">Name</label><input id="group-name" maxlength="100"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="group-cancel" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="group-save" data-i18n="Speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div id="vlan-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 420px;" role="dialog" aria-modal="true" aria-labelledby="vlan-modal-title">
+    <h2 id="vlan-modal-title" data-i18n="VLAN anlegen">VLAN anlegen</h2>
+    <div class="field"><label for="vlan-id" data-i18n="VLAN-ID">VLAN-ID</label><input id="vlan-id" type="number" min="1" max="4094" step="1"></div>
+    <div class="field" id="vlan-name-field"><label for="vlan-name" data-i18n="Name">Name</label><input id="vlan-name" maxlength="32" autocomplete="off" spellcheck="false"></div>
+    <p style="font-size: 12px; color: var(--text-dim);" data-i18n="Name: 1–32 Zeichen aus Buchstaben, Ziffern, Punkt, Unterstrich und Bindestrich. Änderungen werden erst mit „Config speichern“ dauerhaft.">Name: 1–32 Zeichen aus Buchstaben, Ziffern, Punkt, Unterstrich und Bindestrich. Änderungen werden erst mit „Config speichern“ dauerhaft.</p>
+    <div id="vlan-modal-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="vlan-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="vlan-save" type="button" data-i18n="Speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div id="switch-credentials-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 460px;" role="dialog" aria-modal="true" aria-labelledby="switch-credentials-title">
+    <h2 id="switch-credentials-title" data-i18n="Switch-Zugangsdaten">Switch-Zugangsdaten</h2>
+    <p id="switch-credentials-status" role="status" style="font-size:12px; color: var(--text-dim)"></p>
+    <div class="field"><label for="switch-credentials-mode" data-i18n="Zugangsdaten verwenden">Zugangsdaten verwenden</label><select id="switch-credentials-mode"><option value="global" data-i18n="Globale Zugangsdaten verwenden">Globale Zugangsdaten verwenden</option><option value="device" data-i18n="Eigene Zugangsdaten verwenden">Eigene Zugangsdaten verwenden</option></select></div>
+    <p id="switch-credentials-mode-help" style="font-size:12px; color: var(--text-dim)"></p>
+    <div id="switch-credentials-device-fields" class="hidden">
+      <div class="field"><label for="switch-credentials-username" data-i18n="SSH-Benutzername">SSH-Benutzername</label><input id="switch-credentials-username" maxlength="255" autocomplete="off"></div>
+      <div class="field"><label for="switch-credentials-password" data-i18n="Passwort">Passwort</label><input id="switch-credentials-password" type="password" maxlength="1024" autocomplete="new-password"></div>
+      <p id="switch-credentials-password-help" style="font-size:12px; color: var(--text-dim)"></p>
+      <div class="field"><label for="switch-credentials-enable" data-i18n="Enable-Secret (optional)">Enable-Secret (optional)</label><input id="switch-credentials-enable" type="password" maxlength="1024" autocomplete="new-password"></div>
+      <label id="switch-credentials-clear-enable-field" class="hidden" style="font-size:12px"><input id="switch-credentials-clear-enable" type="checkbox" style="width:auto"> <span data-i18n="Gespeichertes Enable-Secret entfernen">Gespeichertes Enable-Secret entfernen</span></label>
+      <p id="switch-credentials-enable-help" style="font-size:12px; color: var(--text-dim)"></p>
+    </div>
+    <p id="switch-credentials-error" role="alert" style="font-size:12px; color: var(--danger)"></p>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="switch-credentials-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="switch-credentials-save" type="button" data-i18n="Speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div id="interface-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 480px;" role="dialog" aria-modal="true" aria-labelledby="intf-modal-title">
+    <h2 id="intf-modal-title" data-i18n="Port konfigurieren">Port konfigurieren</h2>
+    <div id="intf-copy-controls" class="flex-row" style="margin-bottom: 8px;">
+      <button id="intf-copy" disabled data-i18n="Einstellungen kopieren">Einstellungen kopieren</button>
+      <button id="intf-paste" disabled data-i18n="Einfügen">Einfügen</button>
+    </div>
+    <p id="intf-copy-status" role="status" style="font-size: 12px; color: var(--text-dim);"></p>
+    <div class="field"><label for="intf-name">Interface Name</label><input id="intf-name" disabled></div>
+    <div class="field"><label for="intf-description">Description</label><input id="intf-description"></div>
+    <div class="field">
+      <label for="intf-mode">Administrative Mode</label>
+      <select id="intf-mode">
+        <option value="" data-i18n="Bitte explizit wählen">Bitte explizit wählen</option>
+        <option value="access">Static Access</option>
+        <option value="trunk">Trunk</option>
+      </select>
+    </div>
+    <div id="intf-mode-warning" class="interface-mode-warning hidden"></div>
+    <div id="intf-access-fields">
+      <div class="field"><label for="intf-access-vlan">Static Access VLAN</label><select id="intf-access-vlan"></select></div>
+      <div class="field">
+        <label for="intf-voice-vlan" data-i18n="Voice-VLAN">Voice-VLAN</label>
+        <input id="intf-voice-vlan" type="number" min="0" max="4094" step="1" inputmode="numeric" aria-describedby="intf-voice-help">
+        <small id="intf-voice-help" style="color: var(--text-dim);" data-i18n="Leer lässt das Voice-VLAN unverändert, 0 entfernt es.">Leer lässt das Voice-VLAN unverändert, 0 entfernt es.</small>
+      </div>
+    </div>
+    <div id="intf-trunk-fields" class="hidden">
+      <div class="field"><label for="intf-native-vlan">Native VLAN</label><select id="intf-native-vlan"></select></div>
+    </div>
+    <div class="field">
+      <label for="intf-trunk-allowed">Allowed VLANs</label>
+      <input id="intf-trunk-allowed" placeholder="z. B. 10,20,30-40 oder all" data-i18n-placeholder="z. B. 10,20,30-40 oder all" maxlength="24576" aria-describedby="intf-allowed-help">
+      <small id="intf-allowed-help" style="color: var(--text-dim);" data-i18n="Erlaubte VLANs für den Trunk-Betrieb, auch am Access-Port vorbereitbar. IDs 1–4094, Bereiche, all (alle) oder none (keine). Leer lässt die Liste unverändert.">Erlaubte VLANs für den Trunk-Betrieb, auch am Access-Port vorbereitbar. IDs 1–4094, Bereiche, all (alle) oder none (keine). Leer lässt die Liste unverändert.</small>
+    </div>
+    <div class="field">
+      <label for="intf-shutdown" data-i18n="Administrativer Portstatus">Administrativer Portstatus</label>
+      <select id="intf-shutdown">
+        <option value="" data-i18n="Bitte explizit wählen">Bitte explizit wählen</option>
+        <option value="false">Enabled (no shutdown)</option>
+        <option value="true">Disabled (shutdown)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="intf-portfast" data-i18n="PortFast / Edge-Port">PortFast / Edge-Port</label>
+      <select id="intf-portfast">
+        <option value="false">Disable</option>
+        <option value="true">Enable</option>
+      </select>
+    </div>
+    <div class="field" style="flex-direction: row; align-items: center; gap: 8px;">
+      <label for="intf-speed" style="margin: 0; min-width: 50px;">Speed</label>
+      <select id="intf-speed" disabled style="flex: 1;">
+        <option value="10">10</option>
+        <option value="100">100</option>
+        <option value="1000">1000</option>
+      </select>
+      <label style="margin: 0; font-size: 12px; white-space: nowrap;"><input type="checkbox" id="intf-speed-enable" style="width: auto;"> Enable Speed</label>
+    </div>
+    <div class="field" style="flex-direction: row; align-items: center; gap: 8px;">
+      <label for="intf-duplex" style="margin: 0; min-width: 50px;">Duplex</label>
+      <select id="intf-duplex" disabled style="flex: 1;">
+        <option value="half">Half</option>
+        <option value="full">Full</option>
+      </select>
+      <label style="margin: 0; font-size: 12px; white-space: nowrap;"><input type="checkbox" id="intf-duplex-enable" style="width: auto;"> Enable Duplex</label>
+    </div>
+    <div class="panel-box">
+      <strong>Power over Ethernet (PoE)</strong>
+      <p id="intf-poe-status" style="font-size: 12px; color: var(--text-dim);"></p>
+      <div class="field"><label for="intf-poe-mode" data-i18n="PoE-Modus">PoE-Modus</label>
+        <select id="intf-poe-mode" disabled>
+          <option value="" data-i18n="Unverändert / unbekannt">Unverändert / unbekannt</option>
+          <option value="auto" data-i18n="Automatisch (auto)">Automatisch (auto)</option>
+          <option value="static" data-i18n="Statisch reserviert (static)">Statisch reserviert (static)</option>
+          <option value="never" data-i18n="Ausgeschaltet (never)">Ausgeschaltet (never)</option>
+        </select>
+      </div>
+      <div class="field"><label for="intf-poe-standard" data-i18n="PoE-Standard / maximales Portbudget">PoE-Standard / maximales Portbudget</label>
+        <select id="intf-poe-standard" disabled aria-describedby="intf-poe-help intf-poe-capability">
+          <option value="preserve" data-i18n="Bestehendes Limit beibehalten">Bestehendes Limit beibehalten</option>
+        </select>
+        <small id="intf-poe-capability" style="color: var(--text-dim);"></small>
+        <small id="intf-poe-help" style="color: var(--text-dim);" data-i18n="Das Profil begrenzt das Portbudget. Die PoE-Aushandlung und der IEEE-Betriebsmodus werden dadurch nicht umgestellt. „Gerätestandard“ entfernt das konfigurierte Limit.">Das Profil begrenzt das Portbudget. Die PoE-Aushandlung und der IEEE-Betriebsmodus werden dadurch nicht umgestellt. „Gerätestandard“ entfernt das konfigurierte Limit.</small>
+      </div>
+    </div>
+    <div id="intf-profile-row" class="field hidden">
+      <label for="intf-profile" data-i18n="Port-Profil">Port-Profil</label>
+      <div class="flex-row">
+        <select id="intf-profile" style="flex: 1;"><option value="" data-i18n="Profil wählen …">Profil wählen …</option></select>
+        <button id="intf-profile-apply" type="button" disabled data-i18n="Profil anwenden">Profil anwenden</button>
+      </div>
+    </div>
+    <div id="intf-modal-error" style="color: var(--danger); font-size: 12px; margin-bottom: 6px;"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="intf-cancel" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="intf-save" data-i18n="Übernehmen">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<div id="admin-user-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 440px;" role="dialog" aria-modal="true" aria-labelledby="admin-user-modal-title">
+    <h2 id="admin-user-modal-title" data-i18n="Lokalen Benutzer anlegen">Lokalen Benutzer anlegen</h2>
+    <p id="admin-user-provider" class="wlan-modal-help"></p>
+    <div class="field"><label for="admin-user-username" data-i18n="Benutzername">Benutzername</label><input id="admin-user-username" maxlength="64" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="admin-user-display-name" data-i18n="Anzeigename">Anzeigename</label><input id="admin-user-display-name" maxlength="200" autocomplete="off"></div>
+    <div class="field"><label for="admin-user-role" data-i18n="Rolle">Rolle</label>
+      <select id="admin-user-role">
+        <option value="admin" data-i18n="Administrator">Administrator</option>
+        <option value="operator" data-i18n="Operator">Operator</option>
+        <option value="viewer" data-i18n="Nur lesen">Nur lesen</option>
+      </select>
+    </div>
+    <label id="admin-user-enabled-field" style="font-size: 12px; display: block; margin-bottom: 12px;"><input id="admin-user-enabled" type="checkbox" style="width: auto;" checked> <span data-i18n="Aktiv">Aktiv</span></label>
+    <div id="admin-user-password-fields">
+      <div class="field"><label for="admin-user-password" data-i18n="Passwort">Passwort</label><input id="admin-user-password" type="password" maxlength="1024" autocomplete="new-password"></div>
+      <div class="field"><label for="admin-user-password-confirm" data-i18n="Passwort bestätigen">Passwort bestätigen</label><input id="admin-user-password-confirm" type="password" maxlength="1024" autocomplete="new-password"></div>
+      <p id="admin-user-password-help" class="wlan-modal-help"></p>
+    </div>
+    <div id="admin-user-modal-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="admin-user-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="admin-user-save" type="button" data-i18n="Speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div id="security-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 520px; max-height: 90vh; overflow-y: auto;" role="dialog" aria-modal="true" aria-labelledby="security-modal-title">
+    <h2 id="security-modal-title" data-i18n="Port-Sicherheit">Port-Sicherheit</h2>
+    <p class="wlan-modal-help" data-i18n="Nur geänderte Bereiche werden an den Switch gesendet. Vor dem Anwenden erscheint die Befehlsvorschau.">Nur geänderte Bereiche werden an den Switch gesendet. Vor dem Anwenden erscheint die Befehlsvorschau.</p>
+    <div class="panel-box">
+      <strong>Port-Security</strong>
+      <div class="field"><label for="sec-ps-enabled" data-i18n="Port-Security aktiv">Port-Security aktiv</label><select id="sec-ps-enabled"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="sec-ps-max" data-i18n="Maximale MAC-Adressen">Maximale MAC-Adressen</label><input id="sec-ps-max" type="number" min="1" max="1024"></div>
+      <div class="field"><label for="sec-ps-sticky" data-i18n="Sticky-MAC-Lernen">Sticky-MAC-Lernen</label><select id="sec-ps-sticky"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="sec-ps-violation" data-i18n="Aktion bei Verstoß">Aktion bei Verstoß</label><select id="sec-ps-violation"><option value="" data-i18n="Unverändert">Unverändert</option><option value="protect">protect</option><option value="restrict">restrict</option><option value="shutdown">shutdown</option></select></div>
+    </div>
+    <div class="panel-box">
+      <strong>802.1X / MAB</strong>
+      <div class="field"><label for="sec-dot1x-mode" data-i18n="Modus">Modus</label><select id="sec-dot1x-mode"><option value="" data-i18n="Unverändert">Unverändert</option><option value="off" data-i18n="Aus">Aus</option><option value="dot1x">802.1X</option><option value="mab">MAB</option><option value="dot1x_mab">802.1X + MAB</option></select></div>
+      <div class="field"><label for="sec-dot1x-host-mode" data-i18n="Host-Modus">Host-Modus</label><select id="sec-dot1x-host-mode"><option value="" data-i18n="Unverändert">Unverändert</option><option value="single">Single-Host</option><option value="multi_auth">Multi-Auth</option><option value="multi_host">Multi-Host</option><option value="multi_domain">Multi-Domain</option></select></div>
+      <div class="field"><label for="sec-dot1x-guest" data-i18n="Gast-VLAN">Gast-VLAN</label><input id="sec-dot1x-guest" type="number" min="0" max="4094"></div>
+      <div class="field"><label for="sec-dot1x-authfail" data-i18n="VLAN bei fehlgeschlagener Anmeldung">VLAN bei fehlgeschlagener Anmeldung</label><input id="sec-dot1x-authfail" type="number" min="0" max="4094"></div>
+      <small style="color: var(--text-dim);" data-i18n="VLAN-Felder: leer = unverändert, 0 = entfernen.">VLAN-Felder: leer = unverändert, 0 = entfernen.</small>
+    </div>
+    <div class="panel-box">
+      <strong data-i18n="STP-Schutz">STP-Schutz</strong>
+      <div class="field"><label for="sec-bpdu-guard" data-i18n="BPDU Guard">BPDU Guard</label><select id="sec-bpdu-guard"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="sec-root-guard" data-i18n="Root Guard">Root Guard</label><select id="sec-root-guard"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="sec-loop-guard" data-i18n="Loop Guard">Loop Guard</label><select id="sec-loop-guard"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+    </div>
+    <div class="panel-box">
+      <strong>Storm-Control</strong>
+      <div class="field"><label for="sec-storm-broadcast" data-i18n="Broadcast (%)">Broadcast (%)</label><input id="sec-storm-broadcast" type="number" min="0" max="100" step="0.01"></div>
+      <div class="field"><label for="sec-storm-multicast" data-i18n="Multicast (%)">Multicast (%)</label><input id="sec-storm-multicast" type="number" min="0" max="100" step="0.01"></div>
+      <div class="field"><label for="sec-storm-unknown-unicast" data-i18n="Unbekannter Unicast (%)">Unbekannter Unicast (%)</label><input id="sec-storm-unknown-unicast" type="number" min="0" max="100" step="0.01"></div>
+      <div class="field"><label for="sec-storm-action" data-i18n="Aktion">Aktion</label><select id="sec-storm-action"><option value="" data-i18n="Unverändert">Unverändert</option><option value="drop" data-i18n="Verwerfen">Verwerfen</option><option value="shutdown" data-i18n="Port abschalten">Port abschalten</option></select></div>
+      <small style="color: var(--text-dim);" data-i18n="Prozent der Portbandbreite; leer = unverändert, 0 = aus.">Prozent der Portbandbreite; leer = unverändert, 0 = aus.</small>
+    </div>
+    <div class="panel-box">
+      <strong>DHCP-Snooping / DAI / IP Source Guard</strong>
+      <div class="field"><label for="sec-dhcp-trust" data-i18n="DHCP-Snooping vertrauenswürdig">DHCP-Snooping vertrauenswürdig</label><select id="sec-dhcp-trust"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="sec-arp-trust" data-i18n="DAI vertrauenswürdig">DAI vertrauenswürdig</label><select id="sec-arp-trust"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="sec-ipsg" data-i18n="IP Source Guard">IP Source Guard</label><select id="sec-ipsg"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+    </div>
+    <div id="security-modal-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="security-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="security-save" type="button" data-i18n="Vorschau">Vorschau</button>
+    </div>
+  </div>
+</div>
+
+<div id="admin-profile-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 520px; max-height: 90vh; overflow-y: auto;" role="dialog" aria-modal="true" aria-labelledby="admin-profile-modal-title">
+    <h2 id="admin-profile-modal-title" data-i18n="Port-Profil anlegen">Port-Profil anlegen</h2>
+    <div class="field"><label for="admin-profile-name" data-i18n="Name">Name</label><input id="admin-profile-name" maxlength="64" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="admin-profile-description" data-i18n="Beschreibung">Beschreibung</label><input id="admin-profile-description" maxlength="200" autocomplete="off"></div>
+    <p class="wlan-modal-help" data-i18n="Leere Felder gehören nicht zum Profil. Felder, die ein Switch nicht unterstützt, werden beim Anwenden ausgelassen und gemeldet.">Leere Felder gehören nicht zum Profil. Felder, die ein Switch nicht unterstützt, werden beim Anwenden ausgelassen und gemeldet.</p>
+    <div class="panel-box">
+      <strong data-i18n="Port-Einstellungen">Port-Einstellungen</strong>
+      <div class="field"><label for="profile-port-description" data-i18n="Beschreibung">Beschreibung</label><input id="profile-port-description" maxlength="200" autocomplete="off"></div>
+      <div class="field"><label for="profile-port-mode" data-i18n="Modus">Modus</label><select id="profile-port-mode"><option value="" data-i18n="Unverändert">Unverändert</option><option value="access">Static Access</option><option value="trunk">Trunk</option></select></div>
+      <div class="field"><label for="profile-port-access-vlan" data-i18n="Access VLAN">Access VLAN</label><input id="profile-port-access-vlan" type="number" min="1" max="4094"></div>
+      <div class="field"><label for="profile-port-voice-vlan" data-i18n="Voice-VLAN">Voice-VLAN</label><input id="profile-port-voice-vlan" type="number" min="0" max="4094"></div>
+      <div class="field"><label for="profile-port-native-vlan" data-i18n="Native VLAN">Native VLAN</label><input id="profile-port-native-vlan" type="number" min="1" max="4094"></div>
+      <div class="field"><label for="profile-port-trunk-allowed" data-i18n="Allowed VLANs">Allowed VLANs</label><input id="profile-port-trunk-allowed" maxlength="24576" placeholder="z. B. 10,20,30-40 oder all" data-i18n-placeholder="z. B. 10,20,30-40 oder all"></div>
+      <div class="field"><label for="profile-port-edge" data-i18n="PortFast / Edge-Port">PortFast / Edge-Port</label><select id="profile-port-edge"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="profile-port-speed" data-i18n="Speed">Speed</label><select id="profile-port-speed"><option value="" data-i18n="Unverändert">Unverändert</option><option value="auto">auto</option><option value="10">10</option><option value="100">100</option><option value="1000">1000</option></select></div>
+      <div class="field"><label for="profile-port-duplex" data-i18n="Duplex">Duplex</label><select id="profile-port-duplex"><option value="" data-i18n="Unverändert">Unverändert</option><option value="auto">auto</option><option value="half">half</option><option value="full">full</option></select></div>
+      <div class="field"><label for="profile-port-poe-mode" data-i18n="PoE-Modus">PoE-Modus</label><select id="profile-port-poe-mode"><option value="" data-i18n="Unverändert">Unverändert</option><option value="auto" data-i18n="Automatisch (auto)">Automatisch (auto)</option><option value="static" data-i18n="Statisch reserviert (static)">Statisch reserviert (static)</option><option value="never" data-i18n="Ausgeschaltet (never)">Ausgeschaltet (never)</option></select></div>
+      <div class="field"><label for="profile-port-poe-standard" data-i18n="PoE-Standard / maximales Portbudget">PoE-Standard / maximales Portbudget</label><select id="profile-port-poe-standard"><option value="" data-i18n="Unverändert">Unverändert</option><option value="default" data-i18n="Gerätestandard">Gerätestandard</option><option value="802.3af">802.3af</option><option value="802.3at">802.3at</option><option value="802.3bt-type3">802.3bt-type3</option><option value="802.3bt-type4">802.3bt-type4</option><option value="cisco-upoe">cisco-upoe</option></select></div>
+    </div>
+    <div class="panel-box">
+      <strong>Port-Security</strong>
+      <div class="field"><label for="profile-sec-ps-enabled" data-i18n="Port-Security aktiv">Port-Security aktiv</label><select id="profile-sec-ps-enabled"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="profile-sec-ps-max" data-i18n="Maximale MAC-Adressen">Maximale MAC-Adressen</label><input id="profile-sec-ps-max" type="number" min="1" max="1024"></div>
+      <div class="field"><label for="profile-sec-ps-sticky" data-i18n="Sticky-MAC-Lernen">Sticky-MAC-Lernen</label><select id="profile-sec-ps-sticky"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="profile-sec-ps-violation" data-i18n="Aktion bei Verstoß">Aktion bei Verstoß</label><select id="profile-sec-ps-violation"><option value="" data-i18n="Unverändert">Unverändert</option><option value="protect">protect</option><option value="restrict">restrict</option><option value="shutdown">shutdown</option></select></div>
+    </div>
+    <div class="panel-box">
+      <strong>802.1X / MAB</strong>
+      <div class="field"><label for="profile-sec-dot1x-mode" data-i18n="Modus">Modus</label><select id="profile-sec-dot1x-mode"><option value="" data-i18n="Unverändert">Unverändert</option><option value="off" data-i18n="Aus">Aus</option><option value="dot1x">802.1X</option><option value="mab">MAB</option><option value="dot1x_mab">802.1X + MAB</option></select></div>
+      <div class="field"><label for="profile-sec-dot1x-host-mode" data-i18n="Host-Modus">Host-Modus</label><select id="profile-sec-dot1x-host-mode"><option value="" data-i18n="Unverändert">Unverändert</option><option value="single">Single-Host</option><option value="multi_auth">Multi-Auth</option><option value="multi_host">Multi-Host</option><option value="multi_domain">Multi-Domain</option></select></div>
+      <div class="field"><label for="profile-sec-dot1x-guest" data-i18n="Gast-VLAN">Gast-VLAN</label><input id="profile-sec-dot1x-guest" type="number" min="0" max="4094"></div>
+      <div class="field"><label for="profile-sec-dot1x-authfail" data-i18n="VLAN bei fehlgeschlagener Anmeldung">VLAN bei fehlgeschlagener Anmeldung</label><input id="profile-sec-dot1x-authfail" type="number" min="0" max="4094"></div>
+      <small style="color: var(--text-dim);" data-i18n="VLAN-Felder: leer = unverändert, 0 = entfernen.">VLAN-Felder: leer = unverändert, 0 = entfernen.</small>
+    </div>
+    <div class="panel-box">
+      <strong data-i18n="STP-Schutz">STP-Schutz</strong>
+      <div class="field"><label for="profile-sec-bpdu-guard" data-i18n="BPDU Guard">BPDU Guard</label><select id="profile-sec-bpdu-guard"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="profile-sec-root-guard" data-i18n="Root Guard">Root Guard</label><select id="profile-sec-root-guard"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="profile-sec-loop-guard" data-i18n="Loop Guard">Loop Guard</label><select id="profile-sec-loop-guard"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+    </div>
+    <div class="panel-box">
+      <strong>Storm-Control</strong>
+      <div class="field"><label for="profile-sec-storm-broadcast" data-i18n="Broadcast (%)">Broadcast (%)</label><input id="profile-sec-storm-broadcast" type="number" min="0" max="100" step="0.01"></div>
+      <div class="field"><label for="profile-sec-storm-multicast" data-i18n="Multicast (%)">Multicast (%)</label><input id="profile-sec-storm-multicast" type="number" min="0" max="100" step="0.01"></div>
+      <div class="field"><label for="profile-sec-storm-unknown-unicast" data-i18n="Unbekannter Unicast (%)">Unbekannter Unicast (%)</label><input id="profile-sec-storm-unknown-unicast" type="number" min="0" max="100" step="0.01"></div>
+      <div class="field"><label for="profile-sec-storm-action" data-i18n="Aktion">Aktion</label><select id="profile-sec-storm-action"><option value="" data-i18n="Unverändert">Unverändert</option><option value="drop" data-i18n="Verwerfen">Verwerfen</option><option value="shutdown" data-i18n="Port abschalten">Port abschalten</option></select></div>
+      <small style="color: var(--text-dim);" data-i18n="Prozent der Portbandbreite; leer = unverändert, 0 = aus.">Prozent der Portbandbreite; leer = unverändert, 0 = aus.</small>
+    </div>
+    <div class="panel-box">
+      <strong>DHCP-Snooping / DAI / IP Source Guard</strong>
+      <div class="field"><label for="profile-sec-dhcp-trust" data-i18n="DHCP-Snooping vertrauenswürdig">DHCP-Snooping vertrauenswürdig</label><select id="profile-sec-dhcp-trust"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="profile-sec-arp-trust" data-i18n="DAI vertrauenswürdig">DAI vertrauenswürdig</label><select id="profile-sec-arp-trust"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+      <div class="field"><label for="profile-sec-ipsg" data-i18n="IP Source Guard">IP Source Guard</label><select id="profile-sec-ipsg"><option value="" data-i18n="Unverändert">Unverändert</option><option value="true" data-i18n="Ein">Ein</option><option value="false" data-i18n="Aus">Aus</option></select></div>
+    </div>
+    <div id="admin-profile-modal-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="admin-profile-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="admin-profile-save" type="button" data-i18n="Speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div id="admin-mapping-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 440px;" role="dialog" aria-modal="true" aria-labelledby="admin-mapping-modal-title">
+    <h2 id="admin-mapping-modal-title" data-i18n="Zuordnung hinzufügen">Zuordnung hinzufügen</h2>
+    <div class="field"><label for="admin-mapping-provider" data-i18n="Anmeldeweg">Anmeldeweg</label>
+      <select id="admin-mapping-provider">
+        <option value="ad" data-i18n="Active Directory">Active Directory</option>
+        <option value="entra" data-i18n="Microsoft Entra ID">Microsoft Entra ID</option>
+      </select>
+    </div>
+    <div class="field"><label for="admin-mapping-group-id" data-i18n="Gruppenkennung">Gruppenkennung</label><input id="admin-mapping-group-id" maxlength="1024" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="admin-mapping-label" data-i18n="Bezeichnung">Bezeichnung</label><input id="admin-mapping-label" maxlength="200" autocomplete="off"></div>
+    <div class="field"><label for="admin-mapping-role" data-i18n="Rolle">Rolle</label>
+      <select id="admin-mapping-role">
+        <option value="admin" data-i18n="Administrator">Administrator</option>
+        <option value="operator" data-i18n="Operator">Operator</option>
+        <option value="viewer" data-i18n="Nur lesen">Nur lesen</option>
+      </select>
+    </div>
+    <p class="wlan-modal-help" data-i18n="Änderungen gelten ab der nächsten Anmeldung.">Änderungen gelten ab der nächsten Anmeldung.</p>
+    <div id="admin-mapping-modal-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="admin-mapping-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="admin-mapping-save" type="button" data-i18n="Speichern">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div id="device-edit-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 480px;" role="dialog" aria-modal="true" aria-labelledby="device-edit-title">
+    <h2 id="device-edit-title" data-i18n="Geräteeinstellung ändern">Geräteeinstellung ändern</h2>
+    <div id="device-edit-body"></div>
+    <div id="device-edit-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="device-edit-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="device-edit-save" type="button" data-i18n="Vorschau">Vorschau</button>
+    </div>
+  </div>
+</div>
+
+<div id="lag-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 480px;" role="dialog" aria-modal="true" aria-labelledby="lag-modal-title">
+    <h2 id="lag-modal-title" data-i18n="LAG anlegen">LAG anlegen</h2>
+    <div class="field"><label for="lag-id" data-i18n="LAG-ID">LAG-ID</label><input id="lag-id" type="number" min="1" step="1"></div>
+    <div class="field"><label for="lag-mode" data-i18n="Modus">Modus</label><select id="lag-mode"><option value="static" data-i18n="Statisch">Statisch</option><option value="lacp_active" data-i18n="LACP aktiv">LACP aktiv</option><option value="lacp_passive" data-i18n="LACP passiv">LACP passiv</option></select></div>
+    <div class="field"><span class="detail-label" data-i18n="Mitglieder (1–8 Ports)">Mitglieder (1–8 Ports)</span><div id="lag-members" class="l2-check-list"></div></div>
+    <p class="wlan-modal-help" data-i18n="Neue Mitglieder übernehmen die VLAN-Konfiguration des LAG. Der Modus eines bestehenden LAG lässt sich nicht ändern.">Neue Mitglieder übernehmen die VLAN-Konfiguration des LAG. Der Modus eines bestehenden LAG lässt sich nicht ändern.</p>
+    <div id="lag-modal-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="lag-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="lag-save" type="button" data-i18n="Vorschau">Vorschau</button>
+    </div>
+  </div>
+</div>
+
+<div id="stp-priority-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 420px;" role="dialog" aria-modal="true" aria-labelledby="stp-priority-modal-title">
+    <h2 id="stp-priority-modal-title" data-i18n="Bridge-Priorität setzen">Bridge-Priorität setzen</h2>
+    <div class="field"><label id="stp-priority-target-label" for="stp-priority-target" data-i18n="Instanz">Instanz</label><input id="stp-priority-target" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="stp-priority-value" data-i18n="Priorität">Priorität</label><select id="stp-priority-value"></select></div>
+    <p id="stp-priority-help" class="wlan-modal-help"></p>
+    <div id="stp-priority-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="stp-priority-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="stp-priority-save" type="button" data-i18n="Vorschau">Vorschau</button>
+    </div>
+  </div>
+</div>
+
+<div id="stp-mst-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 460px;" role="dialog" aria-modal="true" aria-labelledby="stp-mst-modal-title">
+    <h2 id="stp-mst-modal-title" data-i18n="MST-Region ändern">MST-Region ändern</h2>
+    <div class="field"><label for="stp-mst-name" data-i18n="Regionsname">Regionsname</label><input id="stp-mst-name" maxlength="32" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="stp-mst-revision" data-i18n="Revision">Revision</label><input id="stp-mst-revision" type="number" min="0" max="65535" step="1"></div>
+    <div class="field"><label for="stp-mst-instances" data-i18n="Instanzen">Instanzen</label><textarea id="stp-mst-instances" rows="6" spellcheck="false"></textarea></div>
+    <p class="wlan-modal-help" data-i18n="Eine Zeile pro Instanz im Format „ID: VLANs“, z. B. „1: 10-20,30“. Nicht aufgeführte Instanzen werden entfernt. Name, Revision und Zuordnung müssen auf allen Switches der Region gleich sein.">Eine Zeile pro Instanz im Format „ID: VLANs“, z. B. „1: 10-20,30“. Nicht aufgeführte Instanzen werden entfernt. Name, Revision und Zuordnung müssen auf allen Switches der Region gleich sein.</p>
+    <div id="stp-mst-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="stp-mst-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="stp-mst-save" type="button" data-i18n="Vorschau">Vorschau</button>
+    </div>
+  </div>
+</div>
+
+<div id="stp-port-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 420px;" role="dialog" aria-modal="true" aria-labelledby="stp-port-modal-title">
+    <h2 id="stp-port-modal-title" data-i18n="Spanning Tree am Port">Spanning Tree am Port</h2>
+    <div class="field"><label for="stp-port-cost" data-i18n="Kosten (1–200000000)">Kosten (1–200000000)</label><input id="stp-port-cost" type="number" min="1" max="200000000" step="1"></div>
+    <div class="field"><label for="stp-port-priority" data-i18n="Port-Priorität">Port-Priorität</label><select id="stp-port-priority"></select></div>
+    <div id="stp-port-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="stp-port-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="stp-port-save" type="button" data-i18n="Vorschau">Vorschau</button>
+    </div>
+  </div>
+</div>
+
+<div id="vlan-rollout-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 640px;" role="dialog" aria-modal="true" aria-labelledby="vlan-rollout-title">
+    <h2 id="vlan-rollout-title" data-i18n="VLAN ausrollen">VLAN ausrollen</h2>
+    <p class="wlan-modal-help" data-i18n="Legt das VLAN auf allen Switches der Gruppe an und erlaubt es auf den ausgewählten Trunk-Ports. Erkannte Uplinks sind vorausgewählt. Ein Fehler auf einem Switch bricht die anderen nicht ab.">Legt das VLAN auf allen Switches der Gruppe an und erlaubt es auf den ausgewählten Trunk-Ports. Erkannte Uplinks sind vorausgewählt. Ein Fehler auf einem Switch bricht die anderen nicht ab.</p>
+    <div class="flex-row">
+      <div class="field"><label for="rollout-vlan-id" data-i18n="VLAN-ID">VLAN-ID</label><input id="rollout-vlan-id" type="number" min="1" max="4094" step="1"></div>
+      <div class="field"><label for="rollout-vlan-name" data-i18n="Name (optional)">Name (optional)</label><input id="rollout-vlan-name" maxlength="32" autocomplete="off" spellcheck="false"></div>
+      <button id="rollout-preview-btn" type="button" data-i18n="Vorschau">Vorschau</button>
+    </div>
+    <div id="rollout-preview" class="rollout-preview"></div>
+    <div id="rollout-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="rollout-cancel" type="button" data-modal-close data-i18n="Schließen">Schließen</button>
+      <button class="primary" id="rollout-apply" type="button" disabled data-i18n="Anwenden">Anwenden</button>
+    </div>
+  </div>
+</div>
+
+<div id="vtp-primary-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 460px;" role="dialog" aria-modal="true" aria-labelledby="vtp-primary-title">
+    <h2 id="vtp-primary-title" data-i18n="Primary Server übernehmen">Primary Server übernehmen</h2>
+    <p class="wlan-modal-help" data-i18n="Macht diesen Switch zum VTPv3 Primary Server. Seine VLAN-Datenbank wird danach an alle Switches der Domäne verteilt.">Macht diesen Switch zum VTPv3 Primary Server. Seine VLAN-Datenbank wird danach an alle Switches der Domäne verteilt.</p>
+    <div class="field"><label for="vtp-primary-password" data-i18n="VTP-Passwort (nur falls gesetzt)">VTP-Passwort (nur falls gesetzt)</label><input id="vtp-primary-password" type="password" autocomplete="off" spellcheck="false"></div>
+    <div id="vtp-primary-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="vtp-primary-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="vtp-primary-save" type="button" data-i18n="Vorschau">Vorschau</button>
+    </div>
+  </div>
+</div>
+
+<div id="vtp-domains-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 960px;" role="dialog" aria-modal="true" aria-labelledby="vtp-domains-title">
+    <h2 id="vtp-domains-title" data-i18n="VTP-Domänen">VTP-Domänen</h2>
+    <p class="wlan-modal-help" data-i18n="Liest den VTP-Status aller Cisco-Switches; das kann einige Sekunden dauern.">Liest den VTP-Status aller Cisco-Switches; das kann einige Sekunden dauern.</p>
+    <div id="vtp-domains-body" class="rollout-preview" style="max-height: 70vh;"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="vtp-domains-refresh" type="button" data-i18n="Neu laden">Neu laden</button>
+      <button id="vtp-domains-close" type="button" data-modal-close data-i18n="Schließen">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<div id="change-preview-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 640px;" role="dialog" aria-modal="true" aria-labelledby="change-preview-title">
+    <h2 id="change-preview-title" data-i18n="Änderung prüfen">Änderung prüfen</h2>
+    <p class="wlan-modal-help" data-i18n="Diese Befehle werden unverändert an den Switch gesendet.">Diese Befehle werden unverändert an den Switch gesendet.</p>
+    <pre id="change-preview-lines" class="command-preview"></pre>
+    <ul id="change-preview-warnings" class="change-preview-warnings hidden"></ul>
+    <div id="change-preview-risk" class="wlan-warning-box hidden">
+      <div id="change-preview-risk-text"></div>
+      <label class="wlan-confirm"><input id="change-preview-risk-confirm" type="checkbox" style="width: auto;"> <span data-i18n="Ich habe das Risiko verstanden und möchte die Änderung trotzdem anwenden.">Ich habe das Risiko verstanden und möchte die Änderung trotzdem anwenden.</span></label>
+    </div>
+    <div id="change-preview-rollback-row" class="flex-row hidden" style="margin: 8px 0;">
+      <label style="font-size: 12px;"><input id="change-preview-rollback" type="checkbox" style="width: auto;"> <span data-i18n="Automatisch zurücksetzen, wenn nicht bestätigt nach">Automatisch zurücksetzen, wenn nicht bestätigt nach</span></label>
+      <input id="change-preview-rollback-minutes" type="number" min="1" max="60" value="5" style="width: 70px;" aria-label="Minuten" data-i18n-aria-label="Minuten">
+      <span style="font-size: 12px;" data-i18n="Minuten">Minuten</span>
+    </div>
+    <p id="change-preview-hint" class="wlan-modal-help hidden"></p>
+    <p id="change-preview-expiry" class="wlan-modal-help"></p>
+    <div id="change-preview-error" class="wlan-form-error" role="alert"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="change-preview-cancel" type="button" data-modal-close data-i18n="Abbrechen">Abbrechen</button>
+      <button class="primary" id="change-preview-apply" type="button" data-i18n="Anwenden">Anwenden</button>
+    </div>
+  </div>
+</div>
+
+<div id="config-text-modal" class="modal-backdrop hidden">
+  <div class="modal" style="width: 760px;" role="dialog" aria-modal="true" aria-labelledby="config-text-title">
+    <h2 id="config-text-title" data-i18n="Konfiguration">Konfiguration</h2>
+    <div id="config-text-body"></div>
+    <div class="flex-row" style="justify-content: flex-end; margin-top: 10px;">
+      <button id="config-text-close" type="button" data-modal-close data-i18n="Schließen">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/i18n.js?v=__APP_VERSION__"></script>
+<script src="/static/i18n.en.js?v=__APP_VERSION__"></script>
+<script src="/static/core.js?v=__APP_VERSION__"></script>
+<script src="/static/switches.js?v=__APP_VERSION__"></script>
+<script src="/static/switch-security.js?v=__APP_VERSION__"></script>
+<script src="/static/switch-l2.js?v=__APP_VERSION__"></script>
+<script src="/static/switch-backups.js?v=__APP_VERSION__"></script>
+<script src="/static/switch-device.js?v=__APP_VERSION__"></script>
+<script src="/static/switch-maintenance.js?v=__APP_VERSION__"></script>
+<script src="/static/switch-diagnostics.js?v=__APP_VERSION__"></script>
+<script src="/static/wlan.js?v=__APP_VERSION__"></script>
+<script src="/static/admin.js?v=__APP_VERSION__"></script>
+<script src="/static/main.js?v=__APP_VERSION__"></script>
+</body>
+</html>

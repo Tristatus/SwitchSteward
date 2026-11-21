@@ -1,0 +1,33 @@
+# Local configuration and secrets
+/backend/config.json
+/backend/config.json.*
+*.pem
+*.key
+*.p12
+*.pfx
+known_hosts
+known_hosts.*
+
+# Runtime state: database, backups, firmware, logs, updates
+/backend/data/
+/backend/logs/
+*.db
+*.db-*
+*.log
+*.log.*
+.updates/
+
+# Python environments and caches
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Build output
+/dist/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

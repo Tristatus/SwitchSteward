@@ -1,0 +1,1 @@
+"""Switch inventory device operations."""

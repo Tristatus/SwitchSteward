@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ersteinrichtung · SwitchSteward</title>
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+  <link rel="stylesheet" href="/static/setup.css">
+  <script src="/static/i18n.js"></script>
+  <script src="/static/i18n.en.js"></script>
+  <script src="/static/setup.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">SwitchSteward</span>
+    <div class="topbar-actions">
+      <span data-i18n="Ersteinrichtung">Ersteinrichtung</span>
+      <button type="button" class="theme-toggle" data-theme-toggle role="switch" aria-label="Light Mode" aria-checked="false" title="Zum Light Mode wechseln">Dark Mode</button>
+      <button id="setup-language-toggle" type="button" class="theme-toggle" data-language-toggle aria-label="Sprache wechseln" title="Sprache wechseln">EN</button>
+    </div>
+  </header>
+  <main class="setup-shell">
+    <div class="intro">
+      <p class="eyebrow" data-i18n="Willkommen">Willkommen</p>
+      <h1 data-i18n="SwitchSteward einrichten">SwitchSteward einrichten</h1>
+      <p data-i18n="Legen Sie das erste Administratorkonto an und bestimmen Sie, wie Ihre Installation erreichbar ist.">Legen Sie das erste Administratorkonto an und bestimmen Sie, wie Ihre Installation erreichbar ist.</p>
+    </div>
+
+    <noscript><p class="notice error">Für die Ersteinrichtung muss JavaScript im Browser aktiviert sein.</p></noscript>
+    <div id="loading-status" class="notice" role="status" data-i18n="Die Ersteinrichtung wird vorbereitet …">Die Ersteinrichtung wird vorbereitet …</div>
+    <div id="error-summary" class="notice error" role="alert" tabindex="-1" hidden>
+      <h2 id="error-title" data-i18n="Bitte prüfen Sie Ihre Eingaben.">Bitte prüfen Sie Ihre Eingaben.</h2>
+      <ul id="error-list"></ul>
+      <button id="retry-button" type="button" hidden data-i18n="Erneut laden">Erneut laden</button>
+    </div>
+
+    <div id="setup-content" hidden>
+      <nav aria-label="Einrichtungsschritte" data-i18n-aria-label="Einrichtungsschritte">
+        <ol class="steps">
+          <li data-step-indicator="0" aria-current="step"><span class="step-number">1</span><span data-i18n="Administrator">Administrator</span></li>
+          <li data-step-indicator="1"><span class="step-number">2</span><span data-i18n="Webzugriff">Webzugriff</span></li>
+          <li data-step-indicator="2"><span class="step-number">3</span><span data-i18n="Abschluss">Abschluss</span></li>
+        </ol>
+      </nav>
+
+      <form id="setup-form" novalidate>
+        <fieldset id="setup-fields" class="form-fields">
+          <section class="step-panel" data-step="0" aria-labelledby="step-title-0">
+            <h2 id="step-title-0" tabindex="-1" data-i18n="Lokales Administratorkonto anlegen">Lokales Administratorkonto anlegen</h2>
+            <p class="section-description" data-i18n="Mit diesem Konto melden Sie sich nach der Einrichtung an. Active Directory und Entra ID richten Sie später im Bereich Administration ein. Mit * gekennzeichnete Felder sind Pflichtfelder.">Mit diesem Konto melden Sie sich nach der Einrichtung an. Active Directory und Entra ID richten Sie später im Bereich Administration ein. Mit * gekennzeichnete Felder sind Pflichtfelder.</p>
+            <div class="field">
+              <label for="admin_username" data-i18n="Benutzername *">Benutzername *</label>
+              <input id="admin_username" name="admin_username" required maxlength="64" value="admin" spellcheck="false" autocomplete="username" aria-describedby="admin-username-help">
+              <p class="field-help" id="admin-username-help" data-i18n="1–64 Zeichen: Buchstaben, Ziffern sowie . _ @ -">1–64 Zeichen: Buchstaben, Ziffern sowie . _ @ -</p>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="admin_password" data-i18n="Passwort *">Passwort *</label>
+                <input id="admin_password" name="admin_password" type="password" required maxlength="1024" autocomplete="new-password" aria-describedby="admin-password-help">
+              </div>
+              <div class="field">
+                <label for="admin_password_confirm" data-i18n="Passwort bestätigen *">Passwort bestätigen *</label>
+                <input id="admin_password_confirm" name="admin_password_confirm" type="password" required maxlength="1024" autocomplete="new-password" aria-describedby="admin-password-help">
+              </div>
+              <p class="field-help full-width" id="admin-password-help" data-i18n="Mindestens 12 Zeichen.">Mindestens 12 Zeichen.</p>
+            </div>
+          </section>
+
+          <section class="step-panel" data-step="1" aria-labelledby="step-title-1" hidden>
+            <h2 id="step-title-1" tabindex="-1" data-i18n="Webzugriff festlegen">Webzugriff festlegen</h2>
+            <p class="section-description" data-i18n="Diese Einstellungen gelten nach dem Neustart des Servers.">Diese Einstellungen gelten nach dem Neustart des Servers.</p>
+            <div class="field-grid">
+              <div class="field">
+                <label for="server_host" data-i18n="Bind-Adresse *">Bind-Adresse *</label>
+                <input id="server_host" name="server_host" required value="127.0.0.1" spellcheck="false" autocomplete="off" aria-describedby="server-host-help">
+                <p class="field-help" id="server-host-help" data-i18n="127.0.0.1 für lokalen Zugriff; 0.0.0.0 für alle IPv4-Netzwerkschnittstellen des Servers.">127.0.0.1 für lokalen Zugriff; 0.0.0.0 für alle IPv4-Netzwerkschnittstellen des Servers.</p>
+              </div>
+              <div class="field">
+                <label for="server_port" data-i18n="Port *">Port *</label>
+                <input id="server_port" name="server_port" type="number" min="1" max="65535" step="1" required value="8000" inputmode="numeric">
+              </div>
+            </div>
+            <fieldset class="tls-options">
+              <legend data-i18n="Verbindung">Verbindung</legend>
+              <label class="choice"><input type="radio" name="tls_mode" value="http" checked><span><strong data-i18n="HTTP · lokaler Start">HTTP · lokaler Start</strong><span data-i18n="Unverschlüsselter Zugriff für die lokale Inbetriebnahme.">Unverschlüsselter Zugriff für die lokale Inbetriebnahme.</span></span></label>
+              <label class="choice"><input type="radio" name="tls_mode" value="self_signed"><span><strong data-i18n="HTTPS · Zertifikat automatisch erzeugen">HTTPS · Zertifikat automatisch erzeugen</strong><span data-i18n="Erstellt ein selbstsigniertes Zertifikat. Der Browser zeigt dafür eine Zertifikatswarnung.">Erstellt ein selbstsigniertes Zertifikat. Der Browser zeigt dafür eine Zertifikatswarnung.</span></span></label>
+              <label class="choice"><input type="radio" name="tls_mode" value="certificate"><span><strong data-i18n="HTTPS · vorhandenes Zertifikat">HTTPS · vorhandenes Zertifikat</strong><span data-i18n="Verwendet Ihre Zertifikatsdatei und den zugehörigen privaten Schlüssel.">Verwendet Ihre Zertifikatsdatei und den zugehörigen privaten Schlüssel.</span></span></label>
+              <label class="choice"><input type="radio" name="tls_mode" value="reverse_proxy"><span><strong data-i18n="HTTPS über Reverse Proxy">HTTPS über Reverse Proxy</strong><span data-i18n="Der vorgeschaltete Proxy übernimmt HTTPS; die Verbindung zur Anwendung erfolgt per HTTP.">Der vorgeschaltete Proxy übernimmt HTTPS; die Verbindung zur Anwendung erfolgt per HTTP.</span></span></label>
+            </fieldset>
+            <div id="proxy-fields" class="field" hidden>
+              <label for="public_url" data-i18n="Öffentliche HTTPS-Adresse *">Öffentliche HTTPS-Adresse *</label>
+              <input id="public_url" name="public_url" type="url" placeholder="https://switchsteward.example.org/" spellcheck="false" autocomplete="off" aria-describedby="proxy-help">
+              <p class="field-help" id="proxy-help" data-i18n="Die Adresse Ihres Reverse Proxys, optional mit Port. Verwenden Sie eine eigene Domain oder Subdomain ohne Pfadpräfix wie /switchsteward.">Die Adresse Ihres Reverse Proxys, optional mit Port. Verwenden Sie eine eigene Domain oder Subdomain ohne Pfadpräfix wie /switchsteward.</p>
+            </div>
+            <div id="certificate-fields" class="field-grid certificate-fields" hidden>
+              <div class="field">
+                <label for="tls_cert_file" data-i18n="Zertifikatsdatei *">Zertifikatsdatei *</label>
+                <input id="tls_cert_file" name="tls_cert_file" placeholder="certs/server.crt" spellcheck="false" autocomplete="off" aria-describedby="certificate-help">
+              </div>
+              <div class="field">
+                <label for="tls_key_file" data-i18n="Private Schlüsseldatei *">Private Schlüsseldatei *</label>
+                <input id="tls_key_file" name="tls_key_file" placeholder="certs/server.key" spellcheck="false" autocomplete="off" aria-describedby="certificate-help">
+              </div>
+              <p class="field-help full-width" id="certificate-help" data-i18n="Beide Dateien müssen bereits auf dem Server vorhanden sein. Geben Sie Dateipfade an, keine Zertifikats- oder Schlüsselinhalte.">Beide Dateien müssen bereits auf dem Server vorhanden sein. Geben Sie Dateipfade an, keine Zertifikats- oder Schlüsselinhalte.</p>
+            </div>
+            <p class="notice subtle" data-i18n="Für die Anmeldung über ein Netzwerk richten Sie HTTPS oder einen HTTPS-Reverse-Proxy ein.">Für die Anmeldung über ein Netzwerk richten Sie HTTPS oder einen HTTPS-Reverse-Proxy ein.</p>
+          </section>
+
+          <section class="step-panel" data-step="2" aria-labelledby="step-title-2" hidden>
+            <h2 id="step-title-2" tabindex="-1" data-i18n="Installation abschließen">Installation abschließen</h2>
+            <p class="section-description" data-i18n="Die benötigten Anwendungsdateien werden beim Einrichten automatisch angelegt. Vorhandene Daten bleiben erhalten.">Die benötigten Anwendungsdateien werden beim Einrichten automatisch angelegt. Vorhandene Daten bleiben erhalten.</p>
+            <div class="field">
+              <label for="database_path" data-i18n="Datenbankdatei *">Datenbankdatei *</label>
+              <input id="database_path" name="database_path" required value="data/switchsteward.db" spellcheck="false" autocomplete="off" aria-describedby="database-help">
+              <p class="field-help" id="database-help" data-i18n="Wählen Sie für die Ersteinrichtung eine neue Datenbankdatei. Sie speichert unter anderem Switches und Einstellungen. Ein fehlendes übergeordnetes Verzeichnis wird angelegt.">Wählen Sie für die Ersteinrichtung eine neue Datenbankdatei. Sie speichert unter anderem Switches und Einstellungen. Ein fehlendes übergeordnetes Verzeichnis wird angelegt.</p>
+            </div>
+            <details>
+              <summary><span data-i18n="Globale Gerätezugangsdaten hinterlegen">Globale Gerätezugangsdaten hinterlegen</span> <span>(optional)</span></summary>
+              <div class="details-body">
+                <p class="field-help" data-i18n="Standardzugang für Switches und WLCs. Geben Sie Benutzername und Passwort zusammen an. Eigene Zugangsdaten pro Gerät können Sie später in der Anwendung hinterlegen. Das Enable-Secret gilt nur für Switches.">Standardzugang für Switches und WLCs. Geben Sie Benutzername und Passwort zusammen an. Eigene Zugangsdaten pro Gerät können Sie später in der Anwendung hinterlegen. Das Enable-Secret gilt nur für Switches.</p>
+                <div class="field">
+                  <label for="ssh_username" data-i18n="Benutzername">Benutzername</label>
+                  <input id="ssh_username" name="ssh_username" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="ssh_password" data-i18n="Passwort">Passwort</label>
+                    <input id="ssh_password" name="ssh_password" type="password" autocomplete="new-password">
+                  </div>
+                  <div class="field">
+                    <label for="ssh_enable_secret" data-i18n="Enable-Secret (nur für Switches)">Enable-Secret (nur für Switches)</label>
+                    <input id="ssh_enable_secret" name="ssh_enable_secret" type="password" autocomplete="new-password">
+                  </div>
+                </div>
+              </div>
+            </details>
+            <details>
+              <summary><span data-i18n="Weitere Dateipfade">Weitere Dateipfade</span> <span>(optional)</span></summary>
+              <div class="details-body field-grid">
+                <div class="field">
+                  <label for="ssh_known_hosts_file" data-i18n="SSH Known-Hosts-Datei">SSH Known-Hosts-Datei</label>
+                  <input id="ssh_known_hosts_file" name="ssh_known_hosts_file" placeholder="data/known_hosts" spellcheck="false" autocomplete="off">
+                </div>
+                <div class="field">
+                  <label for="netconf_known_hosts_file" data-i18n="NETCONF Known-Hosts-Datei">NETCONF Known-Hosts-Datei</label>
+                  <input id="netconf_known_hosts_file" name="netconf_known_hosts_file" placeholder="data/netconf_known_hosts" spellcheck="false" autocomplete="off">
+                </div>
+                <p class="field-help full-width" data-i18n="Leer lassen für die Systemvorgaben. Fehlende Dateien an den angegebenen Pfaden werden leer angelegt. Tragen Sie dort vor der ersten Switch-Verbindung die vertrauenswürdigen Host-Schlüssel ein. Bestehende Einträge bleiben erhalten.">Leer lassen für die Systemvorgaben. Fehlende Dateien an den angegebenen Pfaden werden leer angelegt. Tragen Sie dort vor der ersten Switch-Verbindung die vertrauenswürdigen Host-Schlüssel ein. Bestehende Einträge bleiben erhalten.</p>
+              </div>
+            </details>
+            <p class="field-help path-help" data-i18n="Alle Dateipfade beziehen sich auf den Server, auf dem SwitchSteward läuft. Relative Pfade werden vom Konfigurationsverzeichnis aus aufgelöst.">Alle Dateipfade beziehen sich auf den Server, auf dem SwitchSteward läuft. Relative Pfade werden vom Konfigurationsverzeichnis aus aufgelöst.</p>
+            <div class="review" aria-labelledby="review-title">
+              <h3 id="review-title" data-i18n="Ihre Einrichtung">Ihre Einrichtung</h3>
+              <dl><div><dt data-i18n="Administrator">Administrator</dt><dd id="review-admin"></dd></div><div><dt data-i18n="Webzugriff">Webzugriff</dt><dd id="review-server"></dd></div><div><dt data-i18n="Verbindung">Verbindung</dt><dd id="review-tls"></dd></div></dl>
+            </div>
+          </section>
+
+          <div class="form-actions">
+            <button id="back-button" type="button" hidden data-i18n="Zurück">Zurück</button>
+            <span id="step-status" class="step-status" aria-live="polite">Schritt 1 von 3</span>
+            <button id="next-button" type="button" class="primary" data-i18n="Weiter">Weiter</button>
+            <button id="save-button" type="submit" class="primary" hidden data-i18n="Einrichtung speichern">Einrichtung speichern</button>
+          </div>
+        </fieldset>
+      </form>
+      <p id="save-status" class="save-status" role="status" hidden data-i18n="Die Konfiguration wird gespeichert …">Die Konfiguration wird gespeichert …</p>
+    </div>
+
+    <section id="success-panel" class="success-panel" aria-labelledby="success-title" hidden>
+      <span class="success-mark" aria-hidden="true">✓</span>
+      <h2 id="success-title" tabindex="-1" data-i18n="Einrichtung gespeichert">Einrichtung gespeichert</h2>
+      <p id="restart-message"></p>
+      <p data-i18n="Melden Sie sich mit dem angelegten lokalen Konto an. Active Directory und Entra ID richten Sie im Bereich Administration ein.">Melden Sie sich mit dem angelegten lokalen Konto an. Active Directory und Entra ID richten Sie im Bereich Administration ein.</p>
+      <a id="next-url" class="button primary" href="/" data-i18n="Anwendung öffnen">Anwendung öffnen</a>
+      <p id="next-address" class="next-address"></p>
+    </section>
+    <footer data-i18n="SwitchSteward · Konfiguration Ihrer Installation">SwitchSteward · Konfiguration Ihrer Installation</footer>
+  </main>
+</body>
+</html>

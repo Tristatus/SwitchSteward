@@ -1,0 +1,409 @@
+/* WLAN workspace styles are kept separate from the legacy single-file UI. */
+.workspace-nav {
+  display: flex;
+  gap: 4px;
+  padding: 6px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.workspace-nav-btn {
+  min-width: 100px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+.workspace-nav-btn.active {
+  border-color: var(--accent-dim);
+  background: var(--panel-2);
+  color: var(--accent);
+}
+
+#wlan-controller-list {
+  min-height: 40px;
+}
+
+.wlan-sidebar-message {
+  padding: 6px 4px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.wlan-sidebar-message.error {
+  color: var(--danger);
+}
+
+.wlan-controller-item {
+  position: relative;
+  padding: 9px 10px;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  background: transparent;
+  color: inherit;
+  font-family: var(--mono);
+  text-align: left;
+}
+
+.wlan-controller-item:hover {
+  background: var(--panel-2);
+}
+
+.wlan-controller-item.active {
+  border-color: var(--accent-dim);
+  background: var(--panel-2);
+  color: var(--accent);
+}
+
+.wlan-controller-item .wlan-controller-address {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wlan-controller-item .wlan-controller-site {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-dim);
+  font-family: var(--sans);
+  font-size: 11px;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-family: var(--sans);
+  font-size: 13px;
+}
+
+.wlan-modal-help,
+.wlan-credentials-status {
+  margin: 0 0 12px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.wlan-transport-help {
+  margin-top: 2px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.wlan-form-error {
+  min-height: 16px;
+  margin-bottom: 6px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.wlan-controller-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.wlan-controller-title {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 17px;
+}
+
+.wlan-controller-subtitle {
+  margin-top: 4px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.wlan-controller-actions {
+  justify-content: flex-end;
+}
+
+.wlan-tabs {
+  margin-bottom: 12px;
+  gap: 4px;
+}
+
+.wlan-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.wlan-summary-card {
+  min-height: 94px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--subtle-bg);
+}
+
+.wlan-summary-label {
+  color: var(--text-dim);
+  font-size: 11px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.wlan-summary-value {
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 25px;
+}
+
+.wlan-summary-detail {
+  margin-top: 4px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.wlan-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.wlan-toolbar form,
+.wlan-filter-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.wlan-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wlan-filter-field label {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.wlan-filter-field input {
+  min-width: 220px;
+}
+
+.wlan-table-wrap {
+  overflow-x: auto;
+}
+
+.wlan-table-wrap table {
+  min-width: 950px;
+}
+
+.wlan-data-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 12px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.wlan-data-meta-details {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.wlan-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.wlan-pill.ok {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+.wlan-pill.warning {
+  border-color: var(--warning-border);
+  color: var(--warn);
+}
+
+.wlan-pill.error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.wlan-warning-box,
+.wlan-error-box {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--warning-border);
+  border-radius: 5px;
+  background: var(--warning-bg);
+  color: var(--warn);
+  font-size: 12px;
+}
+
+.wlan-error-box {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.wlan-warning-box ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.wlan-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.wlan-status::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  content: '';
+}
+
+.wlan-status.ok {
+  color: var(--accent);
+}
+
+.wlan-status.ok::before {
+  background: var(--accent);
+}
+
+.wlan-status.warning {
+  color: var(--warn);
+}
+
+.wlan-status.warning::before {
+  background: var(--warn);
+}
+
+.wlan-status.error {
+  color: var(--danger);
+}
+
+.wlan-status.error::before {
+  background: var(--danger);
+}
+
+.wlan-cell-subtle {
+  margin-top: 2px;
+  color: var(--text-dim);
+  font-family: var(--sans);
+  font-size: 10px;
+}
+
+.wlan-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.wlan-overview-source {
+  margin-top: 12px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.wlan-capabilities {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.wlan-capability-pills { margin: 10px 0; gap: 6px; }
+.wlan-persistence { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.wlan-tabs { flex-wrap: wrap; }
+.wlan-device-modal { width: 960px; }
+.wlan-device-modal h3 { font-size: 14px; margin-top: 22px; }
+.wlan-device-modal .wlan-table-wrap table { min-width: 640px; }
+.wlan-device-modal .wlan-table-wrap { margin: 12px 0; }
+.wlan-device-modal td, .wlan-device-modal th { white-space: normal; overflow-wrap: anywhere; }
+.wlan-device-modal .wlan-radio-action { display: block; margin: 4px 0; }
+.wlan-value-grid { display: grid; grid-template-columns: minmax(130px, 1fr) minmax(0, 3fr); gap: 8px 18px; font-size: 13px; }
+.wlan-value-grid dt { color: var(--text-dim); }
+.wlan-value-grid dd { margin: 0; overflow-wrap: anywhere; }
+.wlan-ap-tags { display: flex; gap: 16px; flex-wrap: wrap; }
+.wlan-ap-tags > div { display: flex; flex-direction: column; gap: 5px; }
+.wlan-editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 22px; }
+.wlan-editor-grid .field:has(.wlan-mappings) { grid-column: 1 / -1; }
+.wlan-field-help, .wlan-field-current { font-size: 11px; color: var(--text-dim); }
+.wlan-field-help:empty { display: none; }
+.wlan-field-current { border-left: 2px solid var(--border); padding-left: 6px; }
+.wlan-reference-summary { padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; color: var(--text-dim); }
+.wlan-reference-summary .wlan-value-grid { font-size: 11px; grid-template-columns: 1fr; gap: 4px; }
+.wlan-reference-summary dd { margin-bottom: 5px; }
+.wlan-dialog-actions { justify-content: flex-end; margin-top: 20px; }
+.wlan-mapping-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; margin-bottom: 8px; }
+.wlan-confirm { display: flex; align-items: flex-start; gap: 10px; margin: 20px 0; font-size: 13px; }
+.wlan-confirm input { width: auto; margin-top: 2px; flex-shrink: 0; }
+.wlan-affected-list { overflow-wrap: anywhere; font-family: var(--mono); font-size: 12px; }
+.wlan-result-ok { border: 1px solid var(--accent-dim); border-radius: 5px; padding: 12px; color: var(--accent); }
+.wlan-result-ok h3 { margin-top: 0; }
+
+@media (max-width: 650px) {
+  .wlan-editor-grid { grid-template-columns: minmax(0, 1fr); }
+  .wlan-value-grid { grid-template-columns: 1fr; gap: 5px; }
+  .wlan-value-grid dd { margin-bottom: 8px; }
+  .wlan-mapping-row { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .workspace-nav {
+    padding: 6px 12px;
+  }
+
+  .wlan-controller-heading,
+  .wlan-toolbar,
+  .wlan-data-meta {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wlan-controller-actions {
+    justify-content: flex-start;
+  }
+
+  .wlan-filter-field,
+  .wlan-filter-field input {
+    width: 100%;
+    min-width: 0;
+  }
+}
